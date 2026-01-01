@@ -1,0 +1,230 @@
+/* TrevSlider styles */
+.trev-slider-wrapper {
+  padding: 8px;
+  width: 100%;
+}
+
+.trev-slider-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trev-slider-label {
+  color: #ccc;
+  font-size: 12px;
+  min-width: 40px;
+}
+
+.trev-slider {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #0d99ff, #1a1a1a);
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.trev-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #0d99ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trev-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #0d99ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.trev-slider-value {
+  width: 50px;
+  padding: 4px 6px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+
+.trev-slider-value::-webkit-outer-spin-button,
+.trev-slider-value::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.trev-slider-value:focus {
+  outline: none;
+  border-color: #0d99ff;
+}
+
+/* TrevClaude styles */
+.trevclaude-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.trevclaude-history {
+  flex: 1;
+  overflow-y: auto;
+  background: #1a1a1a;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 150px;
+}
+
+.trevclaude-message {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 90%;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.trevclaude-user {
+  background: #0d99ff;
+  color: white;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.trevclaude-assistant {
+  background: #2a2a2a;
+  color: #e0e0e0;
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.trevclaude-error {
+  background: #ff4444;
+  color: white;
+  align-self: center;
+  font-size: 12px;
+}
+
+.trevclaude-loading {
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+  padding: 8px;
+  font-style: italic;
+}
+
+.trevclaude-input-container {
+  display: flex;
+  gap: 8px;
+}
+
+.trevclaude-input {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  resize: none;
+  font-family: inherit;
+}
+
+.trevclaude-input:focus {
+  outline: none;
+  border-color: #0d99ff;
+}
+
+.trevclaude-input::placeholder {
+  color: #666;
+}
+
+.trevclaude-send-btn {
+  background: #0d99ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.trevclaude-send-btn:hover {
+  background: #0b7fd4;
+}
+
+.trevclaude-send-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+
+/* Markdown styles for Claude responses */
+.trevclaude-assistant strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.trevclaude-assistant em {
+  font-style: italic;
+  color: #aaa;
+}
+
+.trevclaude-assistant code {
+  background: #1a1a1a;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 12px;
+  color: #0d99ff;
+}
+
+.trevclaude-assistant pre {
+  background: #1a1a1a;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.trevclaude-assistant pre code {
+  background: none;
+  padding: 0;
+  color: #e0e0e0;
+}
+
+.trevclaude-assistant h2,
+.trevclaude-assistant h3,
+.trevclaude-assistant h4 {
+  margin: 8px 0 4px 0;
+  color: #fff;
+}
+
+.trevclaude-assistant h2 { font-size: 16px; }
+.trevclaude-assistant h3 { font-size: 14px; }
+.trevclaude-assistant h4 { font-size: 13px; }
+
+.trevclaude-assistant li {
+  margin-left: 16px;
+  list-style-type: disc;
+}
