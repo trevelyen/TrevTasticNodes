@@ -159,6 +159,10 @@ app.registerExtension({
                     const index = node.modelList.indexOf(value);
                     if (index !== -1 && selectedModelWidget) {
                         selectedModelWidget.value = index + 1; // 1-indexed
+                        // Save selection change to localStorage
+                        if (node.modelChooserElements?.saveToLocalStorage) {
+                            node.modelChooserElements.saveToLocalStorage();
+                        }
                     }
                 }, { values: [...node.modelList] });
 
@@ -167,6 +171,20 @@ app.registerExtension({
                     modelComboWidget.options.values = [...node.modelList];
                     if (modelNamesWidget) {
                         modelNamesWidget.value = node.modelList.join("|||");
+                    }
+                };
+
+                // Function to save model list to localStorage (backup persistence)
+                const saveToLocalStorage = () => {
+                    try {
+                        const key = `TrevModelChooser_${node.id}`;
+                        const data = {
+                            modelList: node.modelList,
+                            selectedIndex: selectedModelWidget ? selectedModelWidget.value : 1
+                        };
+                        localStorage.setItem(key, JSON.stringify(data));
+                    } catch (e) {
+                        // localStorage not available or full - fail silently
                     }
                 };
 
@@ -183,7 +201,8 @@ app.registerExtension({
                     modelNamesWidget,
                     modelComboWidget,
                     updateComboWidget,
-                    resizeNode
+                    resizeNode,
+                    saveToLocalStorage
                 };
 
                 // Add "Add Model" button (full width)
@@ -201,6 +220,7 @@ app.registerExtension({
                         selectedModelWidget.value = node.modelList.length;
                     }
 
+                    saveToLocalStorage();
                     resizeNode();
                 });
 
@@ -253,6 +273,7 @@ app.registerExtension({
                                         node.modelList[currentIndex] = newName.trim();
                                         updateComboWidget();
                                         modelComboWidget.value = newName.trim();
+                                        saveToLocalStorage();
                                     }
                                 }
                             } else if (pos[0] > buttonWidth + gap) {
@@ -273,6 +294,7 @@ app.registerExtension({
                                     if (selectedModelWidget) {
                                         selectedModelWidget.value = 1;
                                     }
+                                    saveToLocalStorage();
                                     resizeNode();
                                 }
                             }
@@ -305,53 +327,96 @@ app.registerExtension({
                 // Set flag to prevent combo callback from overwriting during restore
                 node._isRestoring = true;
 
-                // Delay to ensure widgets are populated with saved values
-                setTimeout(() => {
-                    if (node.modelChooserElements) {
-                        const { selectedModelWidget, modelNamesWidget, modelComboWidget, updateComboWidget } = node.modelChooserElements;
-
-                        // Get widget indices for reading from widgets_values
-                        const selectedIdx = node.widgets.findIndex(w => w.name === "selected_model");
-                        const namesIdx = node.widgets.findIndex(w => w.name === "model_names");
-
-                        // Load model names - prefer widgets_values from data, fallback to widget value
-                        let modelNamesValue = null;
-                        if (data.widgets_values && namesIdx !== -1 && data.widgets_values[namesIdx]) {
-                            modelNamesValue = data.widgets_values[namesIdx];
-                        } else if (modelNamesWidget && modelNamesWidget.value) {
-                            modelNamesValue = modelNamesWidget.value;
+                // Restoration function - extracted so we can retry if needed
+                const doRestore = (retryCount = 0) => {
+                    // Wait for modelChooserElements to be available (race condition guard)
+                    if (!node.modelChooserElements) {
+                        if (retryCount < 10) {
+                            // Retry up to 10 times with 50ms delays (500ms total max wait)
+                            setTimeout(() => doRestore(retryCount + 1), 50);
+                        } else {
+                            console.warn("TrevModelChooser: Failed to restore - modelChooserElements not available");
+                            node._isRestoring = false;
                         }
+                        return;
+                    }
 
-                        if (modelNamesValue && modelNamesValue.length > 0) {
-                            node.modelList = modelNamesValue.split("|||");
-                            updateComboWidget();
+                    const { selectedModelWidget, modelNamesWidget, modelComboWidget, updateComboWidget, saveToLocalStorage } = node.modelChooserElements;
+
+                    // Get widget indices for reading from widgets_values
+                    const selectedIdx = node.widgets.findIndex(w => w.name === "selected_model");
+                    const namesIdx = node.widgets.findIndex(w => w.name === "model_names");
+
+                    // Load model names - prefer widgets_values from data, fallback to widget value, then localStorage
+                    let modelNamesValue = null;
+                    let selectedValue = 1;
+                    let restoredFromLocalStorage = false;
+
+                    if (data.widgets_values && namesIdx !== -1 && data.widgets_values[namesIdx] !== undefined && data.widgets_values[namesIdx] !== "") {
+                        modelNamesValue = data.widgets_values[namesIdx];
+                    } else if (modelNamesWidget && modelNamesWidget.value && modelNamesWidget.value !== "") {
+                        modelNamesValue = modelNamesWidget.value;
+                    }
+
+                    // If no workflow data, try localStorage as last resort
+                    if (!modelNamesValue || modelNamesValue.length === 0) {
+                        try {
+                            const key = `TrevModelChooser_${node.id}`;
+                            const stored = localStorage.getItem(key);
+                            if (stored) {
+                                const parsed = JSON.parse(stored);
+                                if (parsed.modelList && Array.isArray(parsed.modelList) && parsed.modelList.length > 0) {
+                                    node.modelList = parsed.modelList;
+                                    updateComboWidget();
+                                    restoredFromLocalStorage = true;
+                                    if (parsed.selectedIndex && parsed.selectedIndex > 0 && parsed.selectedIndex <= node.modelList.length) {
+                                        selectedValue = parsed.selectedIndex;
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            // localStorage not available or corrupted - fail silently
                         }
+                    }
 
-                        // Restore selected model - prefer widgets_values from data
-                        let selectedValue = 1;
-                        if (data.widgets_values && selectedIdx !== -1 && data.widgets_values[selectedIdx]) {
+                    if (!restoredFromLocalStorage && modelNamesValue && modelNamesValue.length > 0) {
+                        node.modelList = modelNamesValue.split("|||");
+                        updateComboWidget();
+                    }
+
+                    // Restore selected model - prefer widgets_values from data (unless restored from localStorage)
+                    if (!restoredFromLocalStorage) {
+                        if (data.widgets_values && selectedIdx !== -1 && data.widgets_values[selectedIdx] !== undefined && data.widgets_values[selectedIdx] > 0) {
                             selectedValue = data.widgets_values[selectedIdx];
-                        } else if (selectedModelWidget && selectedModelWidget.value) {
+                        } else if (selectedModelWidget && selectedModelWidget.value && selectedModelWidget.value > 0) {
                             selectedValue = selectedModelWidget.value;
                         }
+                    }
 
-                        if (selectedValue > 0 && selectedValue <= node.modelList.length) {
-                            modelComboWidget.value = node.modelList[selectedValue - 1];
-                            if (selectedModelWidget) {
-                                selectedModelWidget.value = selectedValue;
-                            }
-                        }
-
-                        // Update max for selectedModelWidget
+                    if (selectedValue > 0 && selectedValue <= node.modelList.length) {
+                        modelComboWidget.value = node.modelList[selectedValue - 1];
                         if (selectedModelWidget) {
-                            selectedModelWidget.options = selectedModelWidget.options || {};
-                            selectedModelWidget.options.max = node.modelList.length;
+                            selectedModelWidget.value = selectedValue;
                         }
+                    }
+
+                    // Update max for selectedModelWidget
+                    if (selectedModelWidget) {
+                        selectedModelWidget.options = selectedModelWidget.options || {};
+                        selectedModelWidget.options.max = node.modelList.length;
+                    }
+
+                    // Save to localStorage after successful restore (keeps backup fresh)
+                    if (saveToLocalStorage) {
+                        saveToLocalStorage();
                     }
 
                     // Clear the restoring flag after restore is complete
                     node._isRestoring = false;
-                }, 50);
+                };
+
+                // Start restoration with initial delay to let widgets populate
+                setTimeout(() => doRestore(0), 50);
             };
 
             // Ensure widget values are properly serialized
