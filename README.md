@@ -11,7 +11,7 @@ A collection of custom nodes for [ComfyUI](https://github.com/comfyanonymous/Com
 
 2. Clone this repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/TrevTasticNodes.git
+   git clone https://github.com/trevelyen/TrevTasticNodes.git
    ```
 
 3. Restart ComfyUI
